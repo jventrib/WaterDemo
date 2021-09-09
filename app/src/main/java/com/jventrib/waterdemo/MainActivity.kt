@@ -56,12 +56,8 @@ fun WaterBox(initialBackground: Bitmap, modifier: Modifier = Modifier) {
         mutableStateOf(buffer1, neverEqualPolicy())
     }
 
-    var ib by remember {
-        mutableStateOf(
-            initialBackground.copy(initialBackground.config, true),
-            neverEqualPolicy()
-        )
-    }
+    var ib = Bitmap.createBitmap(width, height, initialBackground.config)
+
     LaunchedEffect(Unit) {
         while (true) {
             awaitFrame()
@@ -70,15 +66,16 @@ fun WaterBox(initialBackground: Bitmap, modifier: Modifier = Modifier) {
                 Random.nextInt(0, 10) * width + Random.nextInt(0, 10),
                 Random.nextInt(255)
             )
-            for (index in 0 until currentBuffer.size) {
-                val i = currentBuffer[index]
-                ib[index.x(), index.y()] = Color.rgb(i, i, i)
-            }
-            ib = ib
+            currentBuffer = currentBuffer
         }
     }
     Box {
         Canvas(Modifier.fillMaxSize()) {
+            for (index in 0 until currentBuffer.size) {
+                val i = currentBuffer[index]
+                ib[index.x(), index.y()] = Color.rgb(i, i, i)
+            }
+
             drawImage(ib.asImageBitmap())
         }
     }
