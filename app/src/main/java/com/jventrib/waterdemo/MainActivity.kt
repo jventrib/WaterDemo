@@ -3,6 +3,7 @@ package com.jventrib.waterdemo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.util.Log
 import android.view.WindowMetrics
@@ -16,6 +17,7 @@ import androidx.compose.material.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.graphics.set
 import com.jventrib.waterdemo.ui.theme.WaterDemoTheme
 import kotlinx.coroutines.android.awaitFrame
@@ -23,6 +25,7 @@ import kotlinx.coroutines.delay
 import java.nio.Buffer
 import java.nio.IntBuffer
 import java.time.Instant
+import kotlin.properties.Delegates
 import kotlin.random.Random
 
 
@@ -86,35 +89,35 @@ fun WaterBox(initialBackground: Bitmap, width: Int, height: Int, modifier: Modif
 
     var ib = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
 
-    LaunchedEffect(Unit) {
-        while (true) {
-            awaitFrame()
-            val start = System.currentTimeMillis()
-            currentBuffer.put(index(Random.nextInt(width), Random.nextInt(height)), 2000)
-            for (x in 1..width - 2) {
-                for (y in 1..height - 2) {
-                    val newValue = gridA(x, y)
-                    val damped = newValue - newValue / damping
-                    currentBuffer.put(index(x, y), damped)
-                }
-            }
-            // Swap buffer
-            val temp = currentBuffer
-            currentBuffer = previousBuffer
-            previousBuffer = temp
-            val end = System.currentTimeMillis()
-            Log.d("Water", "Frame time: ${end - start}ms")
+//    LaunchedEffect(Unit) {
+//        while (true) {
+//            awaitFrame()
+//            val start = System.currentTimeMillis()
+//            currentBuffer.put(index(Random.nextInt(width), Random.nextInt(height)), 2000)
+////            for (x in 1..width - 2) {
+////                for (y in 1..height - 2) {
+////                    val newValue = gridA(x, y)
+////                    val damped = newValue - newValue / damping
+////                    currentBuffer.put(index(x, y), damped)
+////                }
+////            }
+//            // Swap buffer
+//            val temp = currentBuffer
+//            currentBuffer = previousBuffer
+//            previousBuffer = temp
+//            val end = System.currentTimeMillis()
+////            Log.d("Water", "Frame time: ${end - start}ms")
+//        }
+//    }
+    AndroidView(factory = { context ->
+        GLSurfaceView(context).apply {
+            val renderer = WaterRenderer()
+            setEGLContextClientVersion(2)
+            setRenderer(renderer)
+            renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
         }
-    }
-    Box {
-        Canvas(Modifier.fillMaxSize()) {
-            for (index in 0 until currentBuffer.limit()) {
-                val i = (currentBuffer[index] + 123).max(255)
-                ib.set(index.x(), index.y(), Color.rgb(i, i, i))
-            }
-            drawImage(ib.asImageBitmap())
-        }
-    }
+
+    })
 }
 
 private fun Int.max(max: Int): Int {
